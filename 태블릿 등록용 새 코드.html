@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+</head>
+<body>
+    <h1>Welcome to HTML Editor Free</h1>
+    <p>Start editing your HTML, CSS, and JavaScript here!</p>
+</body>
+</html><!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<title>대기열 등록 (입력식)</title>
+<style>
+body { font-family: Arial; padding: 20px; }
+input, button { font-size: 20px; margin: 10px 0; padding: 8px; }
+#callText { font-size: 28px; font-weight: bold; margin-top: 20px; color: red; }
+</style>
+</head>
+<body>
+
+<h1>대기열 등록</h1>
+
+<label>학번 입력</label><br>
+<input type="text" id="hakbun" placeholder="예: 21012">
+
+<br><label>이름 입력</label><br>
+<input type="text" id="name" placeholder="이름">
+
+<br><button id="registerBtn">등록하기</button>
+
+<p id="callText"></p>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/12.6.0/firebase-app.js";
+import { getDatabase, ref, push, set, onValue } from "https://www.gstatic.com/firebasejs/12.6.0/firebase-database.js";
+
+// Firebase 설정
+const firebaseConfig = {
+  apiKey: "AIzaSyCg4-kN-f9Rwh0C11unaMZc6QIa4VoPo",
+  authDomain: "project-2267116559464065713.firebaseapp.com",
+  databaseURL: "https://project-2267116559464065713-default-rtdb.firebaseio.com",
+  projectId: "project-2267116559464065713",
+  storageBucket: "project-2267116559464065713.firebasestorage.app",
+  messagingSenderId: "599441103724",
+  appId: "1:599441103724:web:41a0ac163abe4882e37149"
+};
+
+const app = initializeApp(firebaseConfig);
+const db = getDatabase(app);
+
+// 등록 버튼
+document.getElementById("registerBtn").onclick = () => {
+    const hakbun = document.getElementById("hakbun").value.trim();
+    const name = document.getElementById("name").value.trim();
+
+    if (!hakbun || !name) {
+        alert("학번과 이름을 모두 입력하세요.");
+        return;
+    }
+
+    const queueRef = push(ref(db, "queue"));
+    set(queueRef, {
+        id: hakbun,
+        hakbun: hakbun,
+        name: name,
+        time: Date.now()
+    });
+
+    alert(`${hakbun} ${name} 등록 완료!`);
+    document.getElementById("hakbun").value = "";
+    document.getElementById("name").value = "";
+};
+
+// 제어용 호출 감지
+const callRef = ref(db, "currentCall");
+let lastCall = null;
+
+onValue(callRef, snapshot => {
+    const data = snapshot.val();
+    if (!data || data.time === lastCall) return;
+    lastCall = data.time;
+
+    const { hakbun, name } = data;
+    document.getElementById("callText").innerText = `📢 호출: ${hakbun} - ${name}`;
+
+    speakCall(hakbun, name);
+});
+
+// 음성 호출 함수
+function speakCall(hakbun, name) {
+    speechSynthesis.cancel();
+    const digitMap = {"0":"공","1":"일","2":"이","3":"삼","4":"사","5":"오","6":"육","7":"칠","8":"팔","9":"구"};
+    const numText = hakbun.split("").map(n => digitMap[n]).join(" ");
+    const text = `${numText} ${name} 학생, 입장하세요.`;
+
+    const utter = new SpeechSynthesisUtterance(text);
+    utter.lang = "ko-KR";
+    speechSynthesis.speak(utter);
+}
+</script>
+</body>
+</html>
