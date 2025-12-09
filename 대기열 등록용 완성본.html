@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+</head>
+<body>
+    <h1>Welcome to HTML Editor Free</h1>
+    <p>Start editing your HTML, CSS, and JavaScript here!</p>
+</body>
+</html><!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>대기열 등록</title>
+</head>
+<body>
+
+<h2>학번 & 이름 입력</h2>
+<input id="hakbun" placeholder="학번 입력" />
+<input id="name" placeholder="이름 입력" />
+<button id="submitBtn">대기열 등록</button>
+
+<div id="result"></div>
+<div id="callMessage" style="margin-top:20px; font-size:20px; color:red;"></div>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/12.6.0/firebase-app.js";
+import { getDatabase, ref, push, onValue } from "https://www.gstatic.com/firebasejs/12.6.0/firebase-database.js";
+
+// 🔥 Firebase Config
+const firebaseConfig = {
+  apiKey: "AIzaSyCg4-kN-f9Rwh0C11unaMZLZc6QIa4VoPo",
+  authDomain: "project-2267116559464065713.firebaseapp.com",
+  databaseURL: "https://project-2267116559464065713-default-rtdb.firebaseio.com",
+  projectId: "project-2267116559464065713",
+  storageBucket: "project-2267116559464065713.firebasestorage.app",
+  messagingSenderId: "599441103724",
+  appId: "1:599441103724:web:41a0ac163abe4882e37149"
+};
+
+const app = initializeApp(firebaseConfig);
+const db = getDatabase(app);
+
+// 등록 버튼
+document.getElementById("submitBtn").onclick = function() {
+  const hakbun = document.getElementById("hakbun").value.trim();
+  const name = document.getElementById("name").value.trim();
+  if(!hakbun||!name){ alert("학번과 이름을 입력하세요."); return; }
+
+  push(ref(db,"queue"),{
+    hakbun: hakbun,
+    name: name,
+    time: Date.now()
+  });
+
+  document.getElementById("result").innerText = `${name} 학생 등록 완료!`;
+  document.getElementById("hakbun").value="";
+  document.getElementById("name").value="";
+};
+
+// 숫자를 자리별로 읽는 함수 (음성용)
+function speakDigits(numberString){
+  return numberString.split('').join(' '); // "3333" -> "3 3 3 3"
+}
+
+// 음성 안내
+function speak(text){
+  const msg = new SpeechSynthesisUtterance(text);
+  msg.lang = "ko-KR";
+  window.speechSynthesis.speak(msg);
+}
+
+// PC 호출 감지 및 한 번만 재생
+let lastCallId = null;  // 마지막 호출 기록
+
+const currentCallRef = ref(db,"currentCall");
+onValue(currentCallRef,snapshot=>{
+  const data = snapshot.val();
+  if(data && data.time !== lastCallId){
+    lastCallId = data.time;  // 한 번만 재생
+
+    // 글로 표시: 숫자 그대로
+    const callText = `${data.hakbun} ${data.name} 학생, 입장하세요!`;
+    document.getElementById("callMessage").innerText = `📢 호출: ${callText}`;
+
+    // 음성: 각 자리 숫자별로 읽기 + 이름
+    const spokenText = `${speakDigits(data.hakbun)} ${data.name} 학생, 입장하세요!`;
+    speak(spokenText);
+  }
+});
+</script>
+
+</body>
+</html>
