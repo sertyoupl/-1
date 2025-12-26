@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+</head>
+<body>
+    <h1>Welcome to HTML Editor Free</h1>
+    <p>Start editing your HTML, CSS, and JavaScript here!</p>
+</body>
+</html><!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>대기열 등록</title>
+
+<link href="https://fonts.googleapis.com/css2?family=Pretendard:wght@400;600;700&display=swap" rel="stylesheet">
+
+<style>
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  font-family: 'Pretendard', sans-serif;
+  background: linear-gradient(180deg, #eef7ff, #dbeeff);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.card {
+  width: 90%;
+  max-width: 360px;
+  background: #ffffffee;
+  border-radius: 20px;
+  padding: 28px 24px 30px;
+  box-shadow: 0 20px 40px rgba(0,0,0,0.15);
+  text-align: center;
+}
+
+.title {
+  font-size: 22px;
+  font-weight: 700;
+  color: #2f5fa7;
+  margin-bottom: 6px;
+}
+
+.subtitle {
+  font-size: 14px;
+  color: #6b89b6;
+  margin-bottom: 22px;
+}
+
+input {
+  width: 100%;
+  padding: 13px;
+  font-size: 17px;
+  border-radius: 12px;
+  border: 1px solid #cfe3ff;
+  margin-bottom: 14px;
+  outline: none;
+}
+
+input:focus {
+  border-color: #5fa8ff;
+  box-shadow: 0 0 0 2px rgba(95,168,255,0.25);
+}
+
+button {
+  width: 100%;
+  padding: 14px;
+  font-size: 17px;
+  font-weight: 600;
+  border-radius: 14px;
+  border: none;
+  background: linear-gradient(135deg, #6fb1ff, #3c7be0);
+  color: white;
+  cursor: pointer;
+}
+
+button:active {
+  transform: scale(0.97);
+}
+
+#result {
+  margin-top: 14px;
+  font-size: 15px;
+  color: #2f5fa7;
+  font-weight: 600;
+}
+
+#callMessage {
+  margin-top: 20px;
+  padding: 12px;
+  font-size: 18px;
+  font-weight: 700;
+  color: #c62828;
+  background: #fff5f5;
+  border-radius: 12px;
+  border: 1px solid #ffd6d6;
+}
+
+/* ❄️ 미니 눈 효과 */
+.snow {
+  position: fixed;
+  top: -20px;
+  font-size: 18px;
+  color: white;
+  opacity: 0.8;
+  animation: fall linear infinite;
+  pointer-events: none;
+}
+
+@keyframes fall {
+  to {
+    transform: translateY(110vh);
+  }
+}
+</style>
+</head>
+
+<body>
+
+<!-- ❄️ 눈 -->
+<div class="snow" style="left:15%; animation-duration:12s;">❄</div>
+<div class="snow" style="left:40%; animation-duration:10s;">❅</div>
+<div class="snow" style="left:65%; animation-duration:14s;">❄</div>
+<div class="snow" style="left:85%; animation-duration:11s;">❅</div>
+
+<div class="card">
+  <div class="title">❄ 대기열 등록</div>
+  <div class="subtitle">학번과 이름을 입력하세요</div>
+
+  <input id="hakbun" placeholder="학번 입력">
+  <input id="name" placeholder="이름 입력">
+  <button id="submitBtn">등록하기</button>
+
+  <div id="result"></div>
+  <div id="callMessage"></div>
+</div>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/12.6.0/firebase-app.js";
+import { getDatabase, ref, push, onValue } from "https://www.gstatic.com/firebasejs/12.6.0/firebase-database.js";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyCg4-kN-f9Rwh0C11unaMZLZc6QIa4VoPo",
+  authDomain: "project-2267116559464065713.firebaseapp.com",
+  databaseURL: "https://project-2267116559464065713-default-rtdb.firebaseio.com",
+  projectId: "project-2267116559464065713",
+  storageBucket: "project-2267116559464065713.firebasestorage.app",
+  messagingSenderId: "599441103724",
+  appId: "1:599441103724:web:41a0ac163abe4882e37149"
+};
+
+const app = initializeApp(firebaseConfig);
+const db = getDatabase(app);
+
+document.getElementById("submitBtn").onclick = () => {
+  const hakbun = hakbunInput.value.trim();
+  const name = nameInput.value.trim();
+  if(!hakbun || !name){ alert("학번과 이름을 입력하세요."); return; }
+
+  push(ref(db,"queue"),{ hakbun, name, time: Date.now() });
+  result.innerText = `${name} 학생 등록 완료`;
+  hakbunInput.value = "";
+  nameInput.value = "";
+};
+
+function speakDigits(n){ return n.split('').join(' '); }
+function speak(t){
+  const u = new SpeechSynthesisUtterance(t);
+  u.lang = "ko-KR";
+  speechSynthesis.speak(u);
+}
+
+let lastTime = null;
+onValue(ref(db,"currentCall"), snap=>{
+  const d = snap.val();
+  if(d && d.time !== lastTime){
+    lastTime = d.time;
+    callMessage.innerText = `📢 ${d.hakbun} ${d.name} 학생 호출`;
+    speak(`${speakDigits(d.hakbun)} ${d.name} 학생, 입장하세요`);
+  }
+});
+
+const hakbunInput = document.getElementById("hakbun");
+const nameInput = document.getElementById("name");
+const result = document.getElementById("result");
+const callMessage = document.getElementById("callMessage");
+</script>
+
+</body>
+</html>
