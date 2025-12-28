@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+</head>
+<body>
+    <h1>Welcome to HTML Editor Free</h1>
+    <p>Start editing your HTML, CSS, and JavaScript here!</p>
+</body>
+</html><!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>❄️ 겨울축제 대기등록</title>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
+    <style>
+        body {
+            background: linear-gradient(to bottom, #1e3c72, #2a5298);
+            color: white; font-family: 'Malgun Gothic', sans-serif;
+            display: flex; flex-direction: column; align-items: center; justify-content: center; 
+            height: 100vh; margin: 0; overflow: hidden;
+        }
+        .snow { position: absolute; top: -10px; color: white; user-select: none; z-index: 0; animation: fall linear infinite; }
+        @keyframes fall { to { transform: translateY(105vh); } }
+
+        .container { 
+            background: rgba(255, 255, 255, 0.15); padding: 40px; border-radius: 30px; 
+            backdrop-filter: blur(15px); border: 2px solid rgba(255,255,255,0.3); 
+            text-align: center; z-index: 10; box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+        }
+        h1 { font-size: 2.5em; margin-bottom: 10px; }
+        .count-box { font-size: 1.5em; margin-bottom: 30px; background: rgba(0,0,0,0.2); padding: 10px; border-radius: 15px; }
+        input { padding: 18px; font-size: 20px; border-radius: 12px; border: none; margin: 10px 0; width: 80%; text-align: center; }
+        button { padding: 18px 40px; font-size: 22px; background: #00d2ff; color: white; border: none; border-radius: 12px; cursor: pointer; font-weight: bold; width: 80%; }
+        
+        /* 호출 알림 팝업 스타일 */
+        #callOverlay {
+            display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.85); z-index: 100; flex-direction: column; align-items: center; justify-content: center;
+        }
+        .call-card { background: white; color: #333; padding: 50px; border-radius: 30px; text-align: center; box-shadow: 0 0 50px #00d2ff; }
+        .call-card h2 { font-size: 3em; color: #ff4b2b; margin: 0; }
+        .call-card p { font-size: 2em; margin: 20px 0; }
+    </style>
+</head>
+<body onclick="enableAudio()"> <div id="callOverlay">
+        <div class="call-card">
+            <h2 id="callNum">0000</h2>
+            <p id="callName">OOO 학생</p>
+            <div style="font-size: 1.5em; font-weight: bold;">지금 바로 입장하세요!</div>
+        </div>
+    </div>
+
+    <div class="container">
+        <h1>❄️ WINTER FESTIVAL ❄️</h1>
+        <div class="count-box">현재 대기: <span id="waitCount">0</span>명</div>
+        <input type="number" id="stuNum" placeholder="학번 4자리" oninput="if(this.value.length > 4) this.value = this.value.slice(0, 4);">
+        <input type="text" id="name" placeholder="이름을 입력하세요">
+        <button onclick="register()">대기 등록하기</button>
+    </div>
+
+    <script>
+        const firebaseConfig = {
+            apiKey: "AIzaSyCg4-kN-f9Rwh0C11unaMZLZc6QIa4VoPo",
+            authDomain: "project-2267116559464065713.firebaseapp.com",
+            databaseURL: "https://project-2267116559464065713-default-rtdb.firebaseio.com",
+            projectId: "project-2267116559464065713",
+            storageBucket: "project-2267116559464065713.firebasestorage.app",
+            messagingSenderId: "599441103724",
+            appId: "1:599441103724:web:41a0ac163abe4882e37149"
+        };
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.database();
+
+        function enableAudio() { console.log("Audio Enabled"); }
+
+        // 대기 인원 업데이트
+        db.ref('waiting/').on('value', (snapshot) => {
+            document.getElementById('waitCount').innerText = snapshot.numChildren();
+        });
+
+        // 호출 신호 감시
+        db.ref('currentCall').on('value', (snapshot) => {
+            const data = snapshot.val();
+            if (data) {
+                showCallPopup(data.stuNum, data.name);
+            }
+        });
+
+        function register() {
+            const stuNum = document.getElementById('stuNum').value;
+            const name = document.getElementById('name').value;
+            if (stuNum.length !== 4 || name === "") { alert("정확히 입력해주세요!"); return; }
+            db.ref('waiting/' + Date.now()).set({ stuNum, name, time: Date.now() })
+            .then(() => { alert("등록 완료!"); document.getElementById('stuNum').value = ""; document.getElementById('name').value = ""; });
+        }
+
+        function showCallPopup(num, name) {
+            const overlay = document.getElementById('callOverlay');
+            document.getElementById('callNum').innerText = num;
+            document.getElementById('callName').innerText = name + " 학생";
+            overlay.style.display = 'flex';
+
+            // 음성 안내
+            const splitNum = num.split("").join(" ");
+            const msg = new SpeechSynthesisUtterance(`${splitNum}, ${name} 학생 입장하세요.`);
+            msg.lang = 'ko-KR';
+            window.speechSynthesis.speak(msg);
+
+            // 5초 후 팝업 닫기
+            setTimeout(() => { overlay.style.display = 'none'; }, 5000);
+        }
+
+        function createSnow() {
+            const snow = document.createElement('div');
+            snow.innerHTML = "❄"; snow.classList.add('snow');
+            snow.style.left = Math.random() * 100 + 'vw';
+            snow.style.animationDuration = Math.random() * 3 + 4 + 's';
+            document.body.appendChild(snow);
+            setTimeout(() => snow.remove(), 7000);
+        }
+        setInterval(createSnow, 200);
+    </script>
+</body>
+</html>

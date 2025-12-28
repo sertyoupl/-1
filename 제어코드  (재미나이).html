@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+</head>
+<body>
+    <h1>Welcome to HTML Editor Free</h1>
+    <p>Start editing your HTML, CSS, and JavaScript here!</p>
+</body>
+</html><!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <title>관리자 - 대기열 제어</title>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
+    <style>
+        body { background: #f4f7f9; font-family: 'Malgun Gothic', sans-serif; padding: 30px; }
+        .admin-container { max-width: 800px; margin: auto; background: white; padding: 25px; border-radius: 20px; box-shadow: 0 5px 20px rgba(0,0,0,0.1); }
+        .header { display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #1e3c72; padding-bottom: 15px; }
+        table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+        th, td { padding: 15px; border-bottom: 1px solid #eee; text-align: center; }
+        .btn-call { background: #28a745; color: white; border: none; padding: 8px 15px; border-radius: 5px; cursor: pointer; font-weight: bold; }
+        .btn-next { background: #ff4b2b; color: white; border: none; padding: 12px 25px; border-radius: 10px; cursor: pointer; font-size: 18px; font-weight: bold; }
+    </style>
+</head>
+<body>
+    <div class="admin-container">
+        <div class="header">
+            <h2>📊 실시간 관리 (등록기기에서 안내)</h2>
+            <button class="btn-next" onclick="callFirst()">🔔 다음 순서 호출 & 삭제</button>
+        </div>
+        <table>
+            <thead><tr><th>순번</th><th>학번</th><th>이름</th><th>관리</th></tr></thead>
+            <tbody id="listBody"></tbody>
+        </table>
+    </div>
+
+    <script>
+        const firebaseConfig = {
+            apiKey: "AIzaSyCg4-kN-f9Rwh0C11unaMZLZc6QIa4VoPo",
+            authDomain: "project-2267116559464065713.firebaseapp.com",
+            databaseURL: "https://project-2267116559464065713-default-rtdb.firebaseio.com",
+            projectId: "project-2267116559464065713",
+            storageBucket: "project-2267116559464065713.firebasestorage.app",
+            messagingSenderId: "599441103724",
+            appId: "1:599441103724:web:41a0ac163abe4882e37149"
+        };
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.database();
+
+        let waitingList = [];
+
+        db.ref('waiting/').orderByChild('time').on('value', (snapshot) => {
+            const tbody = document.getElementById('listBody');
+            tbody.innerHTML = "";
+            waitingList = [];
+            let index = 1;
+            snapshot.forEach((child) => {
+                const data = child.val();
+                waitingList.push({key: child.key, ...data});
+                tbody.innerHTML += `<tr>
+                    <td>${index++}</td><td>${data.stuNum}</td><td>${data.name}</td>
+                    <td><button class="btn-call" onclick="handleCall('${child.key}', '${data.stuNum}', '${data.name}')">호출 & 삭제</button></td>
+                </tr>`;
+            });
+        });
+
+        function callFirst() {
+            if (waitingList.length > 0) handleCall(waitingList[0].key, waitingList[0].stuNum, waitingList[0].name);
+            else alert("대기자가 없습니다.");
+        }
+
+        function handleCall(key, stuNum, name) {
+            // 등록용 화면으로 신호 전송 (currentCall 노드 업데이트)
+            db.ref('currentCall').set({ stuNum, name, timestamp: Date.now() });
+            // 대기열에서 삭제
+            db.ref('waiting/' + key).remove();
+        }
+    </script>
+</body>
+</html>
