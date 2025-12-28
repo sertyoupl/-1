@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+</head>
+<body>
+    <h1>Welcome to HTML Editor Free</h1>
+    <p>Start editing your HTML, CSS, and JavaScript here!</p>
+</body>
+</html><!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <title>관리자 - 실시간 대기열 제어 (자동삭제)</title>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
+    <style>
+        body { background: #f4f7f9; font-family: 'Malgun Gothic', sans-serif; padding: 30px; }
+        .admin-container { max-width: 900px; margin: auto; background: white; padding: 25px; border-radius: 20px; box-shadow: 0 5px 20px rgba(0,0,0,0.1); }
+        .header-flex { display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #1e3c72; padding-bottom: 15px; }
+        h2 { color: #1e3c72; margin: 0; }
+        .btn-next { background: #ff4b2b; color: white; border: none; padding: 12px 25px; border-radius: 10px; cursor: pointer; font-size: 18px; font-weight: bold; transition: 0.2s; }
+        .btn-next:hover { background: #e03e20; transform: scale(1.02); }
+        table { width: 100%; border-collapse: collapse; margin-top: 20px; font-size: 18px; }
+        th { background: #1e3c72; color: white; padding: 15px; }
+        td { padding: 15px; border-bottom: 1px solid #eee; text-align: center; }
+        .btn-call { background: #28a745; color: white; border: none; padding: 8px 15px; border-radius: 5px; cursor: pointer; font-weight: bold; }
+        .btn-del { background: #6c757d; color: white; border: none; padding: 8px 15px; border-radius: 5px; cursor: pointer; font-weight: bold; margin-left: 5px; }
+        .btn-call:hover { background: #218838; }
+    </style>
+</head>
+<body>
+    <div class="admin-container">
+        <div class="header-flex">
+            <h2>📊 대기열 실시간 관리 (호출 시 자동삭제)</h2>
+            <button class="btn-next" onclick="callFirst()">🔔 다음 순서 호출 & 삭제</button>
+        </div>
+        <table>
+            <thead>
+                <tr>
+                    <th>순번</th>
+                    <th>학번</th>
+                    <th>이름</th>
+                    <th>관리</th>
+                </tr>
+            </thead>
+            <tbody id="listBody"></tbody>
+        </table>
+    </div>
+
+    <script>
+        const firebaseConfig = {
+            apiKey: "AIzaSyCg4-kN-f9Rwh0C11unaMZLZc6QIa4VoPo",
+            authDomain: "project-2267116559464065713.firebaseapp.com",
+            databaseURL: "https://project-2267116559464065713-default-rtdb.firebaseio.com",
+            projectId: "project-2267116559464065713",
+            storageBucket: "project-2267116559464065713.firebasestorage.app",
+            messagingSenderId: "599441103724",
+            appId: "1:599441103724:web:41a0ac163abe4882e37149"
+        };
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.database();
+
+        let waitingList = []; 
+
+        // 데이터베이스 감시
+        db.ref('waiting/').orderByChild('time').on('value', (snapshot) => {
+            const tbody = document.getElementById('listBody');
+            tbody.innerHTML = "";
+            waitingList = []; 
+            let index = 1;
+            
+            snapshot.forEach((child) => {
+                const data = child.val();
+                const key = child.key;
+                waitingList.push({key, ...data});
+
+                const row = `<tr>
+                    <td><b>${index++}</b></td>
+                    <td>${data.stuNum}</td>
+                    <td>${data.name}</td>
+                    <td>
+                        <button class="btn-call" onclick="handleCall('${key}', '${data.stuNum}', '${data.name}')">호출 & 삭제</button>
+                        <button class="btn-del" onclick="deleteUser('${key}')">단순삭제</button>
+                    </td>
+                </tr>`;
+                tbody.innerHTML += row;
+            });
+        });
+
+        // '다음 순서 호출' 버튼 클릭 시
+        function callFirst() {
+            if (waitingList.length > 0) {
+                const first = waitingList[0];
+                handleCall(first.key, first.stuNum, first.name);
+            } else {
+                alert("대기자가 없습니다.");
+            }
+        }
+
+        // 호출과 삭제를 동시에 처리하는 함수
+        function handleCall(key, num, name) {
+            // 1. 음성 안내
+            const splitNum = num.split("").join(" "); 
+            const text = `${splitNum}, ${name} 학생 입장하세요.`;
+            
+            const utterance = new SpeechSynthesisUtterance(text);
+            utterance.lang = 'ko-KR';
+            utterance.rate = 0.9;
+            window.speechSynthesis.speak(utterance);
+
+            // 2. 즉시 삭제 (호출했으므로 대기열에서 제거)
+            db.ref('waiting/' + key).remove();
+        }
+
+        // 그냥 삭제하고 싶을 때 사용
+        function deleteUser(key) {
+            if(confirm("호출하지 않고 목록에서만 삭제하시겠습니까?")) {
+                db.ref('waiting/' + key).remove();
+            }
+        }
+    </script>
+</body>
+</html>
